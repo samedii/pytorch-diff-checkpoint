@@ -21,17 +21,17 @@ class DiffCheckpoint:
     model: Module
     original_hashes: Dict[str, str]
 
-    def __init__(self, model: Module, original_hashes: Dict[str, str] = None):
+    def __init__(self, model: Module, original_hashes: Dict[str, str]):
         """
-        Initializes the DiffCheckpoint with a model and optionally its original parameter hashes.
+        Initializes the DiffCheckpoint with a model and its original parameter hashes.
 
         Args:
             model (Module): The PyTorch model.
-            original_hashes (Dict[str, str], optional): A dictionary of original parameter hashes. Defaults to None.
+            original_hashes (Dict[str, str]): A dictionary of original parameter hashes.
         """
         super().__init__()
         self.model = model
-        self.original_hashes = original_hashes or {}
+        self.original_hashes = original_hashes
 
     @classmethod
     def from_base_model(cls, model: Module) -> DiffCheckpoint:

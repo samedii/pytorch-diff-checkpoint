@@ -1,5 +1,6 @@
 import pytest
 import torch
+import tempfile
 
 from diff_checkpoint import DiffCheckpoint
 
@@ -29,8 +30,9 @@ def test_diff_checkpoint_with_various_dtypes(dtype):
         for param in model.parameters():
             param.add_(torch.randn_like(param))
 
-    diff_checkpoint.save("test_diff_checkpoint.pth")
-    saved_diff_checkpoint = torch.load("test_diff_checkpoint.pth", weights_only=True)
-    assert (
-        len(saved_diff_checkpoint) > 0
-    ), "Checkpoint should contain modified parameters"
+    with tempfile.NamedTemporaryFile() as temp_file:
+        diff_checkpoint.save(temp_file.name)
+        saved_diff_checkpoint = torch.load(temp_file.name, weights_only=True)
+        assert (
+            len(saved_diff_checkpoint) > 0
+        ), "Checkpoint should contain modified parameters"
