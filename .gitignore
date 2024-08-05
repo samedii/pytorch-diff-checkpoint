@@ -1,0 +1,41 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.pytest_cache/
+
+# Environments
+.env
+.venv
+env/
+venv/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# PyTorch
+*.pt
+*.pth
+*.pkl
+
+# Temporary files
+*.tmp
+*.log
+*.bak
+*.swp
+
+# Poetry
+poetry.lock
+

@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "pytorch-diff-checkpoint"
+version = "0.1.0"
+description = "A PyTorch helper library designed to save only the changes in a fine-tuned base model."
+authors = ["Richard Löwenström <samedii@gmail.com>"]
+readme = "README.md"
+packages = ["diff_checkpoint"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+torch = "^2.0.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.2"
+numpy = "^2.0.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
