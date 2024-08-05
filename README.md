@@ -1,6 +1,6 @@
-# pytorch diff checkpoint
+# pytorch-diff-checkpoint
 
-`pytorch-diff-checkpoint` is a PyTorch helper library designed to save only the changes in a fine-tuned base model. This tool is particularly useful for scenarios where you want to minimize storage usage by saving only the parameters that have been modified.
+`pytorch-diff-checkpoint` is a simple library designed to efficiently save only the modified parameters of a fine-tuned base model. This tool is particularly advantageous in scenarios where minimizing storage usage is crucial, as it ensures that only the altered parameters are stored.
 
 ## Installation
 
@@ -9,8 +9,6 @@ poetry add pytorch-diff-checkpoint
 ```
 
 ## Usage
-
-Create your model.
 
 ```python
 import torch
