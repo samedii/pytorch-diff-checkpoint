@@ -211,3 +211,24 @@ def test_modify_batch_norm_weights_and_save(setup_model):
     assert (
         "bn1.weight" in saved_diff_checkpoint
     ), "Batch norm weight parameter 'bn1.weight' not found in saved diff checkpoint"
+
+
+def test_handle_new_keys_after_initialization(setup_model):
+    """
+    This test checks that new keys added to the model after initializing the differential
+    checkpoint are handled correctly.
+    """
+    model, diff_checkpoint_path, model_state_dict = setup_model
+    diff_checkpoint = DiffCheckpoint.from_base_model(model)
+
+    # Add new parameters to the model (simulating injected weights like PEFT)
+    model.new_fc = torch.nn.Linear(10, 5)
+    with torch.no_grad():
+        model.new_fc.weight.add_(0.1)
+
+    diff_checkpoint.save(diff_checkpoint_path)
+
+    saved_diff_checkpoint = torch.load(diff_checkpoint_path, weights_only=True)
+    assert (
+        "new_fc.weight" in saved_diff_checkpoint
+    ), "Newly added parameter 'new_fc.weight' not found in saved diff checkpoint"
