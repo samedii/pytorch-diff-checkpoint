@@ -1,0 +1,36 @@
+import pytest
+import torch
+
+from diff_checkpoint import DiffCheckpoint
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64, torch.bfloat16])
+def test_diff_checkpoint_with_various_dtypes(dtype):
+    """
+    This test checks that the DiffCheckpoint can handle various tensor dtypes.
+    """
+
+    class SimpleModelWithDtype(torch.nn.Module):
+        def __init__(self, dtype):
+            super(SimpleModelWithDtype, self).__init__()
+            self.fc1 = torch.nn.Linear(10, 10, dtype=dtype)
+            self.fc2 = torch.nn.Linear(10, 1, dtype=dtype)
+
+        def forward(self, x):
+            x = torch.relu(self.fc1(x))
+            x = self.fc2(x)
+            return x
+
+    model = SimpleModelWithDtype(dtype)
+    diff_checkpoint = DiffCheckpoint.from_base_model(model)
+
+    # Modify the weights to ensure there are changes to save
+    with torch.no_grad():
+        for param in model.parameters():
+            param.add_(torch.randn_like(param))
+
+    diff_checkpoint.save("test_diff_checkpoint.pth")
+    saved_diff_checkpoint = torch.load("test_diff_checkpoint.pth", weights_only=True)
+    assert (
+        len(saved_diff_checkpoint) > 0
+    ), "Checkpoint should contain modified parameters"
