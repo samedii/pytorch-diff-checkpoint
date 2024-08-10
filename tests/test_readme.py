@@ -1,6 +1,5 @@
 import re
 
-import markdown
 import torch
 
 import diff_checkpoint

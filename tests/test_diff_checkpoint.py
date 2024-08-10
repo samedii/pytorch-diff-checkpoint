@@ -49,7 +49,7 @@ def test_modify_weights_and_save(setup_model):
             param.add_(0.1)
 
     with tempfile.NamedTemporaryFile() as temp_file:
-        diff_checkpoint.save(temp_file.name)
+        diff_checkpoint.save(model, temp_file.name)
 
         saved_diff_checkpoint = torch.load(temp_file.name, weights_only=True)
         for k, v in model_state_dict.items():
@@ -78,7 +78,7 @@ def test_load_diff_checkpoint(setup_model):
                 param.add_(0.1)
 
     with tempfile.NamedTemporaryFile() as temp_file:
-        diff_checkpoint.save(temp_file.name)
+        diff_checkpoint.save(model, temp_file.name)
 
         # Load the differential checkpoint back into the model
         loaded_diff_checkpoint = torch.load(temp_file.name, weights_only=True)
@@ -100,7 +100,7 @@ def test_no_changes_after_save_and_load(setup_model):
     diff_checkpoint = DiffCheckpoint.from_base_model(model)
 
     with tempfile.NamedTemporaryFile() as temp_file:
-        diff_checkpoint.save(temp_file.name)
+        diff_checkpoint.save(model, temp_file.name)
         loaded_diff_checkpoint = torch.load(temp_file.name, weights_only=True)
 
         # Ensure no weights are saved since they have not been modified
@@ -124,7 +124,7 @@ def test_partial_weight_modification(setup_model):
                 modified_weights.append(name)
 
     with tempfile.NamedTemporaryFile() as temp_file:
-        diff_checkpoint.save(temp_file.name)
+        diff_checkpoint.save(model, temp_file.name)
         saved_diff_checkpoint = torch.load(temp_file.name, weights_only=True)
 
         for name, param in model_state_dict.items():
@@ -153,7 +153,7 @@ def test_non_weight_parameter_modification(setup_model):
                 param.add_(0.1)
 
     with tempfile.NamedTemporaryFile() as temp_file:
-        diff_checkpoint.save(temp_file.name)
+        diff_checkpoint.save(model, temp_file.name)
         saved_diff_checkpoint = torch.load(temp_file.name, weights_only=True)
 
         for name, param in model_state_dict.items():
@@ -178,7 +178,7 @@ def test_save_and_load_with_different_models(setup_model):
                 param.add_(0.1)
 
     with tempfile.NamedTemporaryFile() as temp_file:
-        diff_checkpoint.save(temp_file.name)
+        diff_checkpoint.save(model, temp_file.name)
 
         # Create a new model of the same architecture
         new_model = type(model)()
@@ -208,7 +208,7 @@ def test_modify_batch_norm_weights_and_save(setup_model):
         model.bn1.weight.add_(0.1)
 
     with tempfile.NamedTemporaryFile() as temp_file:
-        diff_checkpoint.save(temp_file.name)
+        diff_checkpoint.save(model, temp_file.name)
 
         saved_diff_checkpoint = torch.load(temp_file.name, weights_only=True)
         assert (
@@ -230,7 +230,7 @@ def test_handle_new_keys_after_initialization(setup_model):
         model.new_fc.weight.add_(0.1)
 
     with tempfile.NamedTemporaryFile() as temp_file:
-        diff_checkpoint.save(temp_file.name)
+        diff_checkpoint.save(model, temp_file.name)
 
         saved_diff_checkpoint = torch.load(temp_file.name, weights_only=True)
         assert (

@@ -37,5 +37,5 @@ diff_checkpoint = DiffCheckpoint.from_base_model(model)
 # ...
 
 # Save the differential checkpoint
-diff_checkpoint.save('diff_checkpoint.pth')
+diff_checkpoint.save(model, 'diff_checkpoint.pth')
 ```

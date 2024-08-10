@@ -14,23 +14,19 @@ class DiffCheckpoint:
     A class to handle differential checkpoints for PyTorch models, saving only the modified parameters.
 
     Attributes:
-        model (Module): The PyTorch model.
         original_hashes (Dict[str, str]): A dictionary storing the original hashes of the model parameters.
     """
 
-    model: Module
     original_hashes: Dict[str, str]
 
-    def __init__(self, model: Module, original_hashes: Dict[str, str]):
+    def __init__(self, original_hashes: Dict[str, str]):
         """
-        Initializes the DiffCheckpoint with a model and its original parameter hashes.
+        Initializes the DiffCheckpoint with its original parameter hashes.
 
         Args:
-            model (Module): The PyTorch model.
             original_hashes (Dict[str, str]): A dictionary of original parameter hashes.
         """
         super().__init__()
-        self.model = model
         self.original_hashes = original_hashes
 
     @classmethod
@@ -48,35 +44,39 @@ class DiffCheckpoint:
         original_hashes: Dict[str, str] = {
             k: hash_tensor(v) for k, v in model_state_dict.items()
         }
-        return cls(model, original_hashes)
+        return cls(original_hashes)
 
-    def save(self, path: Union[str, Path]) -> DiffCheckpoint:
+    def save(self, model: Module, path: Union[str, Path]) -> DiffCheckpoint:
         """
         Saves the differential checkpoint to a file.
 
         Args:
+            model (Module): The PyTorch model.
             path (Union[str, Path]): The file path to save the checkpoint.
 
         Returns:
             DiffCheckpoint: The current instance of DiffCheckpoint.
         """
-        diff_checkpoint = self.state_dict()
+        diff_checkpoint = self.state_dict(model)
         torch.save(diff_checkpoint, str(path))
         return self
 
-    def state_dict(self) -> Dict[str, torch.Tensor]:
+    def state_dict(self, model: Module) -> Dict[str, torch.Tensor]:
         """
         Returns the differential state dictionary of the model, containing only modified parameters.
+
+        Args:
+            model (Module): The PyTorch model.
 
         Returns:
             Dict[str, torch.Tensor]: The differential state dictionary.
         """
-        model_state_dict: Dict[str, torch.Tensor] = self.model.state_dict()
+        model_state_dict: Dict[str, torch.Tensor] = model.state_dict()
         model_buffers: Dict[str, torch.Tensor] = {
-            k: v for k, v in self.model.named_buffers()
+            k: v for k, v in model.named_buffers()
         }
         model_params: Dict[str, torch.Tensor] = {
-            k: v for k, v in self.model.named_parameters()
+            k: v for k, v in model.named_parameters()
         }
         diff_checkpoint: Dict[str, torch.Tensor] = {}
 
