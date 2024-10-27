@@ -82,14 +82,15 @@ class DiffCheckpoint:
         diff_checkpoint: Dict[str, torch.Tensor] = {}
 
         for k, v in model_state_dict.items():
-            original_first_element: torch.Tensor = self.original_first_elements.get(
-                k, torch.tensor(0.0)
-            )
-            current_first_element: torch.Tensor = first_element(v)
-
-            if not torch.allclose(
-                original_first_element, current_first_element, rtol=rtol, atol=atol
-            ) or (k in model_params and model_params[k].requires_grad):
+            if k not in self.original_first_elements:
                 diff_checkpoint[k] = v
+            else:
+                original_first_element: torch.Tensor = self.original_first_elements[k]
+                current_first_element: torch.Tensor = first_element(v)
+
+                if not torch.allclose(
+                    original_first_element, current_first_element, rtol=rtol, atol=atol
+                ) or (k in model_params and model_params[k].requires_grad):
+                    diff_checkpoint[k] = v
 
         return diff_checkpoint

@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 import torch
-from torch.nn import Module
 import torch.nn.functional as F
+from torch.nn import Module
 
 from diff_checkpoint import DiffCheckpoint
 from diff_checkpoint.first_element import first_element  # Updated import
@@ -180,7 +180,7 @@ def test_handle_new_parameters():
         saved_checkpoint = torch.load(temp_file.name)
 
         # Check that the new parameter is saved
-        assert 'new_param' in saved_checkpoint
+        assert "new_param" in saved_checkpoint
 
 
 def test_save_only_modified_parameters():
@@ -195,16 +195,18 @@ def test_save_only_modified_parameters():
         diff_checkpoint.save(model, temp_file.name)
         saved_checkpoint = torch.load(temp_file.name)
 
-        assert 'fc1.weight' in saved_checkpoint, "Modified parameter should be saved"
+        assert "fc1.weight" in saved_checkpoint, "Modified parameter should be saved"
         # Check that all parameters with requires_grad=True are saved
         for name, param in model.named_parameters():
             if param.requires_grad:
-                assert name in saved_checkpoint, f"Parameter {name} with requires_grad=True should be saved"
+                assert (
+                    name in saved_checkpoint
+                ), f"Parameter {name} with requires_grad=True should be saved"
 
 
 def test_save_parameters_with_requires_grad():
     model = SimpleModel()
-    
+
     # Set requires_grad=False for some parameters
     model.fc1.weight.requires_grad = False
     model.fc2.weight.requires_grad = False
@@ -217,16 +219,20 @@ def test_save_parameters_with_requires_grad():
 
         for name, param in model.named_parameters():
             if param.requires_grad:
-                assert name in saved_checkpoint, f"Parameter {name} with requires_grad=True should be saved"
+                assert (
+                    name in saved_checkpoint
+                ), f"Parameter {name} with requires_grad=True should be saved"
             else:
-                assert name not in saved_checkpoint, f"Parameter {name} with requires_grad=False should not be saved"
+                assert (
+                    name not in saved_checkpoint
+                ), f"Parameter {name} with requires_grad=False should not be saved"
 
 
 def test_save_and_load_with_different_device():
     if not torch.cuda.is_available():
         pytest.skip("CUDA not available, skipping GPU test")
 
-    model = SimpleModel().to('cuda')
+    model = SimpleModel().to("cuda")
     diff_checkpoint = DiffCheckpoint.from_base_model(model)
 
     # Modify some weights
@@ -238,10 +244,12 @@ def test_save_and_load_with_different_device():
 
         # Load the checkpoint into a CPU model
         cpu_model = SimpleModel()
-        loaded_checkpoint = torch.load(temp_file.name, map_location='cpu')
+        loaded_checkpoint = torch.load(temp_file.name, map_location="cpu")
         cpu_model.load_state_dict(loaded_checkpoint, strict=False)
 
-        assert torch.allclose(model.fc1.weight.cpu(), cpu_model.fc1.weight), "Weights should match after loading to a different device"
+        assert torch.allclose(
+            model.fc1.weight.cpu(), cpu_model.fc1.weight
+        ), "Weights should match after loading to a different device"
 
 
 def test_gradients_after_loading():
@@ -265,9 +273,13 @@ def test_gradients_after_loading():
         new_model.load_state_dict(loaded_checkpoint, strict=False)
 
         # Check if parameters are preserved
-        for (name, param), (new_name, new_param) in zip(model.named_parameters(), new_model.named_parameters()):
+        for (name, param), (new_name, new_param) in zip(
+            model.named_parameters(), new_model.named_parameters()
+        ):
             assert name == new_name, "Parameter names should match"
-            assert torch.allclose(param.data, new_param.data), f"Parameter values for {name} should match"
+            assert torch.allclose(
+                param.data, new_param.data
+            ), f"Parameter values for {name} should match"
             # Note: Gradients are not preserved in the checkpoint, so we don't check for them
 
 
@@ -293,5 +305,43 @@ def test_partial_loading():
         loaded_checkpoint = torch.load(temp_file.name)
         partial_model.load_state_dict(loaded_checkpoint, strict=False)
 
-        assert torch.allclose(model.fc1.weight, partial_model.fc1.weight), "fc1 weights should match after partial loading"
-        assert not hasattr(partial_model, 'fc2'), "fc2 should not be present in the partial model"
+        assert torch.allclose(
+            model.fc1.weight, partial_model.fc1.weight
+        ), "fc1 weights should match after partial loading"
+        assert not hasattr(
+            partial_model, "fc2"
+        ), "fc2 should not be present in the partial model"
+
+
+def test_handle_new_parameters_with_different_dtypes():
+    """
+    This test checks that new parameters with different dtypes are correctly handled
+    and saved in the differential checkpoint.
+    """
+    model = SimpleModel()
+    diff_checkpoint = DiffCheckpoint.from_base_model(model)
+
+    # Add new parameters with different dtypes
+    model.new_float = torch.nn.Parameter(torch.randn(5, 5))  # default is float32
+    model.new_byte = torch.nn.Parameter(
+        torch.ones(5, 5, dtype=torch.uint8), requires_grad=False
+    )
+    model.new_bool = torch.nn.Parameter(
+        torch.ones(5, 5, dtype=torch.bool), requires_grad=False
+    )
+    model.new_long = torch.nn.Parameter(
+        torch.ones(5, 5, dtype=torch.long), requires_grad=False
+    )
+
+    with tempfile.NamedTemporaryFile() as temp_file:
+        diff_checkpoint.save(model, temp_file.name)
+        saved_checkpoint = torch.load(temp_file.name)
+
+        # Check that all new parameters are saved
+        assert "new_float" in saved_checkpoint, "New float parameter should be saved"
+        assert "new_byte" in saved_checkpoint, "New byte parameter should be saved"
+        assert "new_bool" in saved_checkpoint, "New bool parameter should be saved"
+        assert "new_long" in saved_checkpoint, "New long parameter should be saved"
+
+        # Check that the dtypes are preserved
+        assert saved_checkpoint["new_float"].dtype == torch.float32
