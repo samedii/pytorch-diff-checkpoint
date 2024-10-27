@@ -1,44 +1,40 @@
 import time
-
 import torch
 from torchvision import models
+from diff_checkpoint.first_element import first_element  # Updated import
 
-from diff_checkpoint.hash_tensor import hash_tensor
 
-
-def test_hash_tensor_performance():
+def test_first_element_performance():
     """
-    This test checks the performance of the hash_tensor function by measuring the time taken to hash a large tensor.
+    This test checks the performance of the first_element function by measuring the time taken to process a large tensor.
     """
     large_tensor = torch.randn(1000, 1000, 100)  # Create a large tensor
 
     start_time = time.time()
-    hash_result = hash_tensor(large_tensor)
+    result = first_element(large_tensor)
     end_time = time.time()
 
     elapsed_time = end_time - start_time
-    print(f"Time taken to hash the large tensor: {elapsed_time:.4f} seconds")
+    print(f"Time taken to process the large tensor: {elapsed_time:.4f} seconds")
 
-    # Ensure the hash result is a string of length 64 (SHA-256 hash length)
-    assert isinstance(hash_result, str), "Hash result should be a string"
-    assert len(hash_result) == 64, "Hash result should be 64 characters long"
+    assert isinstance(result, torch.Tensor), "Result should be a tensor"
+    assert result.numel() == 1, "Result should be a scalar tensor"
 
 
-def test_hash_tensor_performance_small_network():
+def test_first_element_performance_small_network():
     """
-    This test checks the performance of the hash_tensor function by measuring the time taken to hash a standard smaller network.
+    This test checks the performance of the first_element function by measuring the time taken to process a standard smaller network.
     """
     model = models.resnet18(pretrained=False)
     model.eval()
 
     start_time = time.time()
     for param in model.parameters():
-        hash_result = hash_tensor(param)
+        result = first_element(param)
     end_time = time.time()
 
     elapsed_time = end_time - start_time
-    print(f"Time taken to hash the small network: {elapsed_time:.4f} seconds")
+    print(f"Time taken to process the small network: {elapsed_time:.4f} seconds")
 
-    # Ensure the hash result is a string of length 64 (SHA-256 hash length)
-    assert isinstance(hash_result, str), "Hash result should be a string"
-    assert len(hash_result) == 64, "Hash result should be 64 characters long"
+    assert isinstance(result, torch.Tensor), "Result should be a tensor"
+    assert result.numel() == 1, "Result should be a scalar tensor"

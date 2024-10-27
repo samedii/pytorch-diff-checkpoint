@@ -2,6 +2,10 @@
 
 `pytorch-diff-checkpoint` is a simple library designed to efficiently save only the modified parameters of a fine-tuned base model. This tool is particularly advantageous in scenarios where minimizing storage usage is crucial, as it ensures that only the altered parameters are stored.
 
+It checks if a parameter is different by the "requires_grad" attribute and if the first element of the parameter is different.
+
+This automatically handles saving parameters changes by the optimizer or statistics like batch norm.
+
 ## Installation
 
 ```bash
