@@ -66,8 +66,9 @@ class DiffCheckpoint:
         self, model: Module, rtol: float = 1e-5, atol: float = 1e-8
     ) -> Dict[str, torch.Tensor]:
         """
-        Returns the differential state dictionary of the model, containing modified parameters
-        and all parameters with requires_grad=True.
+        Returns the differential state dictionary of the model, containing:
+        1. Modified parameters and buffers
+        2. All parameters with requires_grad=True
 
         Args:
             model (Module): The PyTorch model.
@@ -83,14 +84,22 @@ class DiffCheckpoint:
 
         for k, v in model_state_dict.items():
             if k not in self.original_first_elements:
+                # Save new parameters/buffers
                 diff_checkpoint[k] = v
-            else:
-                original_first_element: torch.Tensor = self.original_first_elements[k]
-                current_first_element: torch.Tensor = first_element(v)
+                continue
 
-                if not torch.allclose(
-                    original_first_element, current_first_element, rtol=rtol, atol=atol
-                ) or (k in model_params and model_params[k].requires_grad):
-                    diff_checkpoint[k] = v
+            original_first_element: torch.Tensor = self.original_first_elements[k]
+            current_first_element: torch.Tensor = first_element(v)
+
+            # Save if:
+            # 1. The tensor has changed, OR
+            # 2. It's a parameter (not a buffer) and requires_grad is True
+            if not torch.allclose(
+                original_first_element.to(current_first_element),
+                current_first_element,
+                rtol=rtol,
+                atol=atol,
+            ) or (k in model_params and model_params[k].requires_grad):
+                diff_checkpoint[k] = v
 
         return diff_checkpoint
