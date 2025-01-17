@@ -345,3 +345,51 @@ def test_handle_new_parameters_with_different_dtypes():
 
         # Check that the dtypes are preserved
         assert saved_checkpoint["new_float"].dtype == torch.float32
+
+
+def test_state_dict_content():
+    """
+    Test that state_dict returns the correct content:
+    1. Parameters with requires_grad=True
+    2. Parameters with different first elements
+    3. New parameters not in the base model
+    """
+    model = SimpleModel()
+    # Set one parameter to not require gradients
+    model.fc1.weight.requires_grad = False
+    modified_param_name = "fc1.weight"
+    
+    # Store original value before creating checkpoint
+    original_value = model.fc1.weight[0, 0].item()
+    diff_checkpoint = DiffCheckpoint.from_base_model(model)
+    
+    # Initially, only parameters with requires_grad=True should be in state dict
+    initial_state = diff_checkpoint.state_dict(model)
+    print("\nInitial state:", initial_state.keys())
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            assert name in initial_state, f"Parameter {name} with requires_grad=True should be in initial state"
+        else:
+            assert name not in initial_state, f"Parameter {name} with requires_grad=False should not be in initial state"
+    
+    # Modify the parameter that doesn't require gradients
+    with torch.no_grad():
+        model.fc1.weight.add_(0.1)
+        new_value = model.fc1.weight[0, 0].item()
+        print(f"\nModified fc1.weight: {original_value} -> {new_value}")
+    
+    # Now both the modified parameter and requires_grad=True parameters should be included
+    modified_state = diff_checkpoint.state_dict(model)
+    print("\nModified state:", modified_state.keys())
+    print("\nOriginal first elements:", {k: v.item() for k, v in diff_checkpoint.original_first_elements.items() if k == modified_param_name})
+    print("Current first element:", first_element(model.fc1.weight.detach().cpu()).item())
+    assert modified_param_name in modified_state
+    
+    # Modify a buffer
+    with torch.no_grad():
+        model.bn1.running_mean.add_(0.1)
+        modified_buffer_name = "bn1.running_mean"
+    
+    # The modified buffer should be included along with requires_grad=True parameters
+    buffer_state = diff_checkpoint.state_dict(model)
+    assert modified_buffer_name in buffer_state
